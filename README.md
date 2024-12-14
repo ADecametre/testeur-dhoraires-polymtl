@@ -31,6 +31,12 @@ Le Testeur essaiera un par un les horaires fournis jusqu'à ce qu'il trouve un h
 
 <sup>Vous pouvez également voir toutes les opérations effectuées par le Testeur et la raison pour laquelle les horaires précédents ne sont pas retenus en ouvrant la console du navigateur (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd> ou <kbd>F12</kbd>).</sup>
 
+
+
+https://github.com/user-attachments/assets/0586492c-3f89-404a-822b-d4fbbaf2a29e
+
+
+
 ## Comment ça fonctionne
 
 Lorsque la page `Modifications de choix de cours` du dossier étudiant charge, la liste des places disponibles de tous les groupes de tous les cours de l'université est chargée localement. La page utilise cette liste locale pour déterminer instantanément s'il reste de la place. C'est pourquoi le Testeur d'horaires est capable d'effectuer ses opérations instantanément.
