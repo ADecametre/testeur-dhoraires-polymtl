@@ -1,6 +1,5 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @namespace    http://tampermonkey.net/
 // @version      2024-12-14
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
@@ -25,29 +24,17 @@
        style="background-color:#${active ? "f0" : "0f"}03"
 />
 ${active ? '<input type="button" value="Rafraîchir" onclick="location.reload()" style="background-color:#00f3" />' : ""}
-<hr />`
-                           )
+<hr />`)
     if(!active) return
 
-    // Wait
     async function wait(ms){
         return new Promise(res => setTimeout(res, ms))
     }
 
-    // Custom Error
-    /*class AvailabilityError extends Error {
-        constructor(message) {
-            super(message);
-            this.name = 'AvailabilityError';
-        }
-    }*/
-
-    // Catch alert
+    // Désactivation des messages d'alerte pour ne pas interrompre le testeur
     const windowAlert = window.alert
-    var error
+    var error // Variable qui stocke les messages pour les cours non disponibles
     window.alert = function(message) {
-        //if (message.includes("plus de places")) throw new AvailabilityError(message)
-        //return windowAlert(message);
         if (message.includes("plus de places") || message.includes("n'existe pas")) error = message
     }
     const windowConfirm = window.confirm
@@ -58,9 +45,11 @@ ${active ? '<input type="button" value="Rafraîchir" onclick="location.reload()"
     }
 
 
-    // Load cc
+    // Chargement des choix de cours
     form.style.display = 'none'
     while(!window.cc) await wait(50)
+
+    // Enregistrement de l'horaire initial pour pouvoir y revenir
     const initial_cc = JSON.parse(JSON.stringify(window.cc))
     function reset(){
         window.cc.copierChoix(initial_cc)
@@ -70,12 +59,6 @@ ${active ? '<input type="button" value="Rafraîchir" onclick="location.reload()"
             choix.modifie = false
         }
     }
-    //window.initial_cc = JSON.parse(JSON.stringify(window.cc))
-    //window.affichage_initial_cc = JSON.parse(JSON.stringify(window.initial_cc))
-    /*Object.entries(window.affichage_initial_cc)
-        .filter(([k,v])=>isNaN(k)||v.sigle)
-        .forEach(([k,v])=>delete window.affichage_initial_cc[k])
-        .forEach(([k,v])=>Object.entries(v).forEach())*/
     var affichage_initial_cc = []
     for (const [n_cours, cours] of Object.entries(window.ccTemp)){
         if(cours.sigle){
@@ -85,11 +68,11 @@ ${active ? '<input type="button" value="Rafraîchir" onclick="location.reload()"
     console.group("Horaire initial")
     console.table(affichage_initial_cc)
     console.groupEnd()
-    //console.table(Object.values(initial_cc).filter(key=>!isNaN(key)))
+
     form.style.display = ''
     await wait(50)
 
-
+    // Demande de l'horaire à l'utilisateur
     var horaires // {sigle: string, grTheo: string?, grLab: string?}[][]
     let horaires_str = await navigator.clipboard.readText().catch(e=>e) + " "
     do {
@@ -104,29 +87,33 @@ ${active ? '<input type="button" value="Rafraîchir" onclick="location.reload()"
         }
     } while (!horaires)
 
-    // Loop combinaisons
+
     console.log("%cTesteur d'horaires :)", 'font-size:2.5em')
-    horaireLoop: for (const [n_horaire, horaire] of horaires.entries()){
+    // Loop horaires
+    horaireLoop:
+    for (const [n_horaire, horaire] of horaires.entries()){
         error = undefined
-        //console.log("%cHoraire #"+(n_horaire+1), 'font-size:20px')
         console.groupEnd()
         console.group("Horaire #"+(n_horaire+1))
-                console.table(horaire)
-        //try{
+        console.table(horaire)
+        // Loop cours
         for (const [n_cours, cours] of horaire.entries()){
-            for (const [input_name, input_value] of Object.entries(cours).filter(([k,v])=>v)){
+            // Loop propriétés (sigle, grTheo, grLab)
+            for (const [input_name, input_value] of Object.entries(cours).filter(([,v])=>v)){
+                // Modification du input
                 let input = form[input_name.toLowerCase()+(n_cours+1)]
                 if (input.value == input_value.toUpperCase() || (!isNaN(input_value) && input.value == parseInt(input_value))) continue
                 input.value = input_value
                 input.onchange()
+                // Si un des cours n'est pas disponible
                 if (error){
                     console.log("%c"+error, 'color:red')
                     reset()
                     continue horaireLoop
-                    //await wait(1000)
                 }
             }
         }
+        // Si l'horaire est disponible
         await wait(10)
         const isHoraireDifferent = window.cc.some(cours => cours.modifie)
         console.log("%cDisponible"+(isHoraireDifferent ? "" : " (horaire actuel)"), 'color:green')
@@ -136,19 +123,11 @@ ${isHoraireDifferent ? "- Pour conserver cet horaire, appuyez sur le bouton « E
 - Pour obtenir les résultats les plus récents, rafraîchissez la page.`)
         window.liste_des_conflits(form)
         break
-        /*}catch(e){
-            if (e instanceof AvailabilityError) {
-                //window.cc = window.initial_cc
-                await wait(1000)
-            }
-            else throw e
-        }*/
     }
 
+    // Si aucun horaire n'est disponible
     if(error){
         resetWindowPopups()
         alert("Aucun horaire n'est disponible. :(\nEssayez de rafraîchir la page ou d'entrer d'autres horaires.")
     }
-
-
 })();
