@@ -67,6 +67,18 @@ function createurdeliste(){
             #favoris-liste .up { grid-area: up }
             #favoris-liste .down { grid-area: down }
             #favoris-liste .supprimer { grid-area: supprimer }
+            [data-tooltip] { display: flex; align-items: center; flex-direction:column }
+            [data-tooltip]:hover::after {
+                display: block;
+                position: absolute;
+                top: 80%;
+                content: attr(data-tooltip);
+                border: 1px solid black;
+                border-radius: 5px;
+                background: #eeee;
+                padding: .25em;
+                font-size: 0.75em;
+            }
         </style>
         <button class="favoris-dialog-toggle" onclick="document.getElementById('favoris-dialog').showModal()">
             Afficher les favoris
@@ -77,16 +89,43 @@ function createurdeliste(){
             </button>
             <div id="favoris-dialog-buttons">
                 <div>
-                    <button style="background-color:#0f0a" onclick="copyFavoris().then(()=>{
-                        window.open('https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet?testeur', '_blank')
-                    })">
+                    <button
+                        data-tooltip="Ouvrir le dossier étudiant et utiliser le Testeur"
+                        style="background-color:#0f0a"
+                        onclick="copyFavoris().then(()=>{window.open('https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet?testeur', '_blank')})"
+                    >
                         Tester
                     </button>
-                    <button style="background-color:#00fa" onclick="copyFavoris().then(()=>alert('Liste d\\'horaires copiée.\\nConservez-la pour l\\'utiliser plus tard sur le testeur.'))">
+                    <button
+                        data-tooltip="Copier la liste d'horaires sous forme de texte qui peut être utilisée dans le Testeur"
+                        style="background-color:#00fa"
+                        onclick="copyFavoris().then(()=>alert('Liste d\\'horaires copiée.\\nVous pouvez la coller dans le testeur.'))"
+                    >
                         Copier
                     </button>
-                    <button style="background-color:#f00a" onclick="if(confirm('Êtes-vous certain de vouloir retirer tous les favoris ?')){setFavoris([])}">
+                    <button
+                        data-tooltip="Ajouter des horaires depuis un fichier HTML"
+                        style="background-color:#00fa"
+                        onclick="importFavoris()"
+                    >
+                        Importer
+                    </button>
+                    <button
+                        data-tooltip="Sauvegarder la liste d'horaires sous forme de fichier HTML"
+                        style="background-color:#00fa"
+                        onclick="exportFavoris()"
+                    >
+                        Exporter
+                    </button>
+                    <button
+                        data-tooltip="Retirer tous les horaires"
+                        style="background-color:#f00a"
+                        onclick="if(confirm('Êtes-vous certain de vouloir retirer tous les favoris ?')){setFavoris([])}"
+                    >
                         Supprimer
+                    </button>
+                    <button style="background-color:#555a" onclick="window.open('https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser', '_blank')">
+                        ?
                     </button>
                 </div>
                 <hr />
@@ -96,9 +135,7 @@ function createurdeliste(){
     const dialog = document.getElementById("favoris-dialog");
     if(window.location.search == "?favoris") dialog.showModal()
     dialog.addEventListener("click", event => {
-        if (event.target === dialog) {
-            dialog.close();
-        }
+        if (event.target === dialog) dialog.close();
     });
 
     // Fonctions de modification du localStorage
@@ -122,14 +159,48 @@ function createurdeliste(){
 
     // Copie des favoris
     window.copyFavoris = async ()=>{
-        const horaires = Array.from(document.getElementById("favoris-liste").querySelectorAll(".cours"))
+        const horaires = [...document.getElementById("favoris-liste").querySelectorAll(".cours")]
         const horaires_str = horaires.map(horaire=>{
-            const liste_cours = Array.from(horaire.querySelectorAll("tr"))
+            const liste_cours = [...horaire.querySelectorAll("tr")]
             return liste_cours.map(cours => {
-                return Array.from(cours.children).toSpliced(1,1).map(e=>e.innerText).join("/").replace(/[\s:]/g, '')
+                return [...cours.children].toSpliced(1,1).map(e=>e.innerText).filter(txt=>txt).join("/").replace(/[\s:]/g, '')
             }).join(",")
-        }).join(";") // Exemple : INF1007/T1/L1,INF1500/T1/L1;INF1007/T1/L1,INF1500/T1/L2
+        }).join(";") // Exemple : INF1007/T1/L1,INF3005I/T1;INF1007/T1/L1,INF3005I/T1
         return navigator.clipboard.writeText(horaires_str)
+    }
+
+    // Importation/Exportation des favoris
+    window.importFavoris = ()=>{
+        let input = document.createElement('input');
+        input.type = 'file'
+        input.accept = '.html'
+        input.onchange = ()=>{
+            input.files.item(0).text()
+                .then(text=>{
+                    try {
+                        if(!text.includes('<link rel="stylesheet" href="https://beta.horaires.aep.polymtl.ca/pkg/aep-schedule-website.css">')) throw new Error()
+                        const horaires = document.createElement("div")
+                        horaires.innerHTML = text
+                        const liste_horaires = [...horaires.querySelectorAll(":scope > div")].map(horaire=>horaire.innerHTML.replace(/<\/?tbody>/g,""))
+                        window.setFavoris([...new Set(window.getFavoris().concat(liste_horaires))])
+                        setTimeout(()=>alert("Horaires importés"),10)
+                    } catch {
+                        alert("Impossible d'importer les horaires.\nAssurez-vous de fournir un fichier qui a été exporté depuis cet outil.")
+                    }
+                })
+        };
+        input.click()
+    }
+    window.exportFavoris = ()=>{
+        const a = document.createElement('a');
+        a.href = 'data:attachment/html,' + encodeURI(
+            '<style>body{display:flex;flex-wrap:wrap;justify-content:center;}</style>'
+            +'<link rel="stylesheet" href="https://beta.horaires.aep.polymtl.ca/pkg/aep-schedule-website.css">'
+            +window.getFavoris().map((favori,i)=>`<div style="padding:2em">${favori}</div>`).join("<hr />")
+        );
+        a.target = '_blank';
+        a.download = 'horaires-favoris.html';
+        a.click();
     }
 
     // Synchronisation de la liste affichée avec celle enregistrée dans localStorage
@@ -146,14 +217,25 @@ function createurdeliste(){
             <b>Horaire #${i+1}</b>
             <div>
                 <div class="horaire">${e}</div>
-                <button class="up" onclick="moveFavori(${i}, ${i-1})" ${i==0 ? "disabled" : ""}>⬆️</button>
-                <button class="down" onclick="moveFavori(${i}, ${i+1})" ${i==favoris.length-1 ? "disabled" : ""}>⬇️</button>
-                <button class="supprimer" onclick="if(confirm('Êtes-vous certain de vouloir retirer l\\'horaire #${i+1} ?')){removeFavori(getFavoris()[${i}])}">❌</button>
-            </div>`).join('') || "<p style='text-align:center;padding:2em'>Aucun favori</p>"
+                <button class="up" onclick="moveFavori(${i}, ${i-1})" ${i==0 ? "disabled" : ""}>
+                    ⬆️
+                </button>
+                <button class="down" onclick="moveFavori(${i}, ${i+1})" ${i==favoris.length-1 ? "disabled" : ""}>
+                    ⬇️
+                </button>
+                <button class="supprimer" onclick="if(confirm('Êtes-vous certain de vouloir retirer l\\'horaire #${i+1} ?')){removeFavori(getFavoris()[${i}])}">
+                    ❌
+                </button>
+            </div>`).join('')
+        ||
+            "<p style='text-align:center;padding:2em'>Aucun favori</p>"
 
-        document.querySelectorAll("#favoris-dialog-buttons button").forEach(button=>{button.disabled = favoris.length === 0})
+        document.querySelectorAll("#favoris-dialog-buttons button").forEach(button=>{
+            if(!["Importer","?"].some(str => button.innerHTML.includes(str))) button.disabled = favoris.length === 0
+        })
     }
     updateListe()
+    window.updateListe = updateListe
     document.addEventListener("favorisModifiés", updateListe)
 
     // Affichage des boutons favori
@@ -171,7 +253,7 @@ function createurdeliste(){
         return bouton
     }
     function updateBoutons() {
-        const listeCours = document.querySelectorAll('main>.right-panel>div')
+        const listeCours = document.querySelectorAll('main>.right-panel>div:has(>.cours)')
         listeCours.forEach(e=>{
             const boutonExistant = e.querySelector('button.favori')
             const html = e.querySelector('.cours').outerHTML+e.querySelector('.schedule').outerHTML
@@ -202,6 +284,7 @@ async function testeur(){
             style="background-color:#${active ? "f0" : "0f"}03"
         />
         ${active ? '<input type="button" value="Rafraîchir" onclick="location.reload()" style="background-color:#00f3" />' : ""}
+        <a href="https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser" target="_blank">?</a>
         <table id="tests" style="width:100%"><thead><th style="width:max(10dvw,100px)"></th></thead><tbody /></table>
         <hr />`)
     if(!active) return
@@ -253,7 +336,7 @@ async function testeur(){
 
     // Demande de l'horaire à l'utilisateur
     var horaires // {sigle: string, grTheo: string?, grLab: string?}[][]
-    let horaires_str = await navigator.clipboard.readText().catch(e=>e) // Exemple : INF1007/T1/L1,INF1500/T1/L1;INF1007/T1/L1,INF1500/T1/L2
+    let horaires_str = await navigator.clipboard.readText().catch(e=>e) // Exemple : INF1007/T1/L1,INF3005I/T1;INF1007/T1/L1,INF3005I/T1
     const cours_regex = /^([\w-]+)(?:\/(T)(\d+))?(?:\/(L)(\d+))?$/
     do {
         alert(horaires_str)
@@ -300,11 +383,10 @@ async function testeur(){
         console.groupEnd()
         console.group("Horaire #"+(n_horaire+1))
         console.table(horaire)
-            let n_modifie = 0
+        let n_modifie = 0
         // Loop cours
         for (const [n_cours, cours] of horaire.entries()){
-                n_modifie++
-                console.log(n_modifie+"/"+window.cc.length)
+            n_modifie++
             // Loop propriétés (sigle, grTheo, grLab)
             for (const [input_name, input_value] of Object.entries(cours).filter(([,v])=>v)){
                 // Modification du input
@@ -323,15 +405,14 @@ async function testeur(){
             }
         }
         // Si l'horaire est disponible
-            for (;n_modifie<window.cc.length;n_modifie++){
-                // Effacer les inputs restants
-                console.log("-"+n_modifie+"/"+window.cc.length)
-                let input = form["sigle"+(window.cc.length-n_modifie+1)]
-                console.log(input)
-                input.value = ""
-                input.onchange()
-            }
         const isHoraireDifferent = window.cc.some(cours => cours.modifie)
+        while(n_modifie<window.cc.length){
+            // Effacer les inputs restants
+            n_modifie++
+            let input = form["sigle"+n_modifie]
+            input.value = ""
+            input.onchange()
+        }
         console.log("%cDisponible"+(isHoraireDifferent ? "" : " (horaire actuel)"), 'color:green')
         document.querySelector("#test-"+(n_horaire+1)).insertAdjacentHTML("beforeend", `<td style="color:green">Disponible${isHoraireDifferent ? "" : " (horaire actuel)"}</td>`)
         await wait(100)
