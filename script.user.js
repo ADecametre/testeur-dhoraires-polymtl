@@ -3,6 +3,7 @@
 // @version      2024-12-15
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
+// @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet*
 // @match        https://beta.horaires.aep.polymtl.ca/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=polymtl.ca
@@ -12,20 +13,51 @@
 (async function() {
     'use strict';
 
-    switch(window.location.origin){
-        case 'https://dossieretudiant.polymtl.ca':
+    switch(location.hostname){
+        case 'dossieretudiant.polymtl.ca':
             if("sigle1" in document.forms[0]) testeur()
-            else window.location.href = "https://dossieretudiant.polymtl.ca/WebEtudiant7/ValidationServlet"
+            else if(location.pathname == "/WebEtudiant7/PresentationHorairePersServlet") creerInterfaceTesteur()
+            else location.href = "https://dossieretudiant.polymtl.ca/WebEtudiant7/ValidationServlet"
             break
-        case 'https://beta.horaires.aep.polymtl.ca':
-            createurdeliste()
+        case 'beta.horaires.aep.polymtl.ca':
+            gestionnaireDeFavoris()
             break
     }
 
 })();
 
+function creerInterfaceTesteur(active){
+    const titre = document.querySelector("form>.row:has(h3)")
+    const disabled = !active && active !== false
+    titre.insertAdjacentHTML('beforebegin',
+        `<div ${disabled ? 'style="position:relative;top:-10px"' : ''}>
+            <style>
+                .pulse {
+                    animation: pulse 2s infinite;
+                }
+                @keyframes pulse {
+                    0% { box-shadow: 0 0 0 0px #aa0a }
+                    100% { box-shadow: 0 0 0 20px #aa00 }
+                }
+            </style>
+            <a id="open-aep" style="background-color:#ff03" href="https://beta.horaires.aep.polymtl.ca/?favoris" target="_blank">
+                Ouvrir/Créer votre liste d'horaires
+            </a>
+            ${disabled ? "" :
+                `<input id="toggle-testeur" type="button"
+                    value="${active ? "Fermer" : "Ouvrir"} le testeur d'horaires :)"
+                    style="background-color:#${active ? "f0" : "0f"}03"
+                />`
+            }
+            ${active ? '<input type="button" value="Rafraîchir" onclick="location.reload()" style="background-color:#00f3" />' : ""}
+            <a href="https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser" target="_blank">?</a>
+            ${disabled ? "" : '<table id="tests" style="width:100%"><thead><th style="width:max(10dvw,100px)"></th></thead><tbody /></table>'}
+        </div>
+        <hr />`)
+}
 
-function createurdeliste(){
+
+function gestionnaireDeFavoris(){
     // Affichage de la liste des favoris
     document.body.insertAdjacentHTML('beforeend',
         `<style>
@@ -92,7 +124,7 @@ function createurdeliste(){
                     <button
                         data-tooltip="Ouvrir le dossier étudiant et utiliser le Testeur"
                         style="background-color:#0f0a"
-                        onclick="copyFavoris().then(()=>{window.open('https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet?testeur', '_blank')})"
+                        onclick="testerFavoris()"
                     >
                         Tester
                     </button>
@@ -124,7 +156,7 @@ function createurdeliste(){
                     >
                         Supprimer
                     </button>
-                    <button style="background-color:#555a" onclick="window.open('https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser', '_blank')">
+                    <button style="background-color:#555a" onclick="open('https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser', '_blank')">
                         ?
                     </button>
                 </div>
@@ -133,14 +165,14 @@ function createurdeliste(){
             <div id="favoris-liste"></div>
         </dialog>`)
     const dialog = document.getElementById("favoris-dialog");
-    if(window.location.search == "?favoris") dialog.showModal()
+    if(location.search == "?favoris") dialog.showModal()
     dialog.addEventListener("click", event => {
         if (event.target === dialog) dialog.close();
     });
 
     // Fonctions de modification du localStorage
-    window.getFavoris = ()=>JSON.parse(window.localStorage.getItem("favoris") || "[]")
-    window.setFavoris = favoris=>window.localStorage.setItem("favoris", JSON.stringify(favoris))
+    window.getFavoris = ()=>JSON.parse(localStorage.getItem("favoris") || "[]")
+    window.setFavoris = favoris=>localStorage.setItem("favoris", JSON.stringify(favoris))
     window.addFavori = favori=>{
         const favoris = window.getFavoris()
         favoris.push(favori)
@@ -156,6 +188,15 @@ function createurdeliste(){
         favoris.splice(new_i, 0, ...favoris.splice(i, 1))
         window.setFavoris(favoris)
     }
+
+    window.testerFavoris = ()=>window.copyFavoris().then(()=>{
+        const url = 'https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet?testeur'
+        if (window.testeur?.window) {
+            window.testeur.focus()
+            window.testeur.location.replace(url)
+        }
+        else window.testeur = open(url, '_blank')
+    })
 
     // Copie des favoris
     window.copyFavoris = async ()=>{
@@ -204,8 +245,8 @@ function createurdeliste(){
     }
 
     // Synchronisation de la liste affichée avec celle enregistrée dans localStorage
-    const localStorageSetItem = window.localStorage.setItem
-    localStorage.setItem = function(key, value) {
+    const localStorageSetItem = localStorage.setItem
+    window.localStorage.setItem = function(key, value) {
         localStorageSetItem.apply(this, arguments)
         if (key == "favoris") document.dispatchEvent(new Event("favorisModifiés"))
     }
@@ -239,7 +280,6 @@ function createurdeliste(){
         })
     }
     updateListe()
-    window.updateListe = updateListe
     document.addEventListener("favorisModifiés", updateListe)
 
     // Affichage des boutons favori
@@ -275,22 +315,12 @@ function createurdeliste(){
 
 
 async function testeur(){
-    const form = document.forms[0]
-
     const searchParam = "?testeur"
-    const active = window.location.search == "?testeur"
+    const active = location.search == "?testeur"
 
-    form.insertAdjacentHTML('beforebegin',
-        `<a href="https://beta.horaires.aep.polymtl.ca/?favoris" target="_blank">Ouvrir/Créer votre liste d'horaires</a>
-        <input type="button"
-            value="${active ? "Fermer" : "Ouvrir"} le testeur d'horaires :)"
-            onclick="location.href=location.href.split('?')[0]${active?"":`+'${searchParam}'`}"
-            style="background-color:#${active ? "f0" : "0f"}03"
-        />
-        ${active ? '<input type="button" value="Rafraîchir" onclick="location.reload()" style="background-color:#00f3" />' : ""}
-        <a href="https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser" target="_blank">?</a>
-        <table id="tests" style="width:100%"><thead><th style="width:max(10dvw,100px)"></th></thead><tbody /></table>
-        <hr />`)
+    creerInterfaceTesteur(active)
+    document.getElementById("toggle-testeur").onclick = () => { location.href = location.href.split('?')[0] + (active ? "" : searchParam) }
+
     if(!active) return
 
     async function wait(ms){
@@ -299,6 +329,7 @@ async function testeur(){
 
 
     // Chargement des choix de cours
+    const form = document.forms[0]
     form.style.display = 'none'
     while(!window.cc) await wait(50)
 
@@ -354,19 +385,20 @@ async function testeur(){
             return obj
         }))
     } catch {
-        if (confirm("Aucune liste d'horaire copiée.\nOuvrir le générateur d'horaires de l'AEP ?")){
-            open("https://beta.horaires.aep.polymtl.ca/?favoris", "_blank")
+        if(confirm("Aucune liste d'horaire copiée.\nOuvrir le générateur d'horaires de l'AEP ?")){
+            location.replace("https://beta.horaires.aep.polymtl.ca/?favoris")
         }
+        document.getElementById("open-aep").classList.add("pulse")
         return
     }
 
     // Désactivation des messages d'alerte pour ne pas interrompre le testeur
-    const windowAlert = window.alert
+    const windowAlert = alert
     var error // Variable qui stocke les messages pour les cours non disponibles
-    window.alert = function(message) {
+    window.alert = message => {
         if (message.includes("plus de places") || message.includes("n'existe pas")) error = message
     }
-    const windowConfirm = window.confirm
+    const windowConfirm = confirm
     window.confirm = ()=>{}
     function resetWindowPopups(){
         window.alert = windowAlert
