@@ -330,6 +330,7 @@ async function testeur(){
     console.group("Horaire initial")
     console.table(affichage_initial_cc)
     console.groupEnd()
+    const initial_sigles = affichage_initial_cc.map(cours=>cours.sigle)
 
     form.style.display = ''
     await wait(50)
@@ -384,6 +385,8 @@ async function testeur(){
         console.group("Horaire #"+(n_horaire+1))
         console.table(horaire)
         let n_modifie = 0
+        // Trier les cours selon l'ordre des cours de l'horaire initial (essentiel pour que les groupes de l'horaire initial soient pris en compte)
+        horaire.sort((a, b) => initial_sigles.includes(a.sigle) ? initial_sigles.indexOf(a.sigle) - initial_sigles.indexOf(b.sigle) : 1);
         // Loop cours
         for (const [n_cours, cours] of horaire.entries()){
             n_modifie++
