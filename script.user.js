@@ -228,7 +228,11 @@ function createurdeliste(){
                 </button>
             </div>`).join('')
         ||
-            "<p style='text-align:center;padding:2em'>Aucun favori</p>"
+            `<p style='text-align:center;padding:2em'>
+                <b>Aucun favori</b>
+                <br />
+                <small>Générez des horaires puis cliquez sur les boutons « Ajouter aux favoris » pour les faire apparaître ici.</small>
+            </p>`
 
         document.querySelectorAll("#favoris-dialog-buttons button").forEach(button=>{
             if(!["Importer","?"].some(str => button.innerHTML.includes(str))) button.disabled = favoris.length === 0
@@ -293,19 +297,6 @@ async function testeur(){
         return new Promise(res => setTimeout(res, ms))
     }
 
-    // Désactivation des messages d'alerte pour ne pas interrompre le testeur
-    const windowAlert = window.alert
-    var error // Variable qui stocke les messages pour les cours non disponibles
-    window.alert = function(message) {
-        if (message.includes("plus de places") || message.includes("n'existe pas")) error = message
-    }
-    const windowConfirm = window.confirm
-    window.confirm = ()=>{}
-    function resetWindowPopups(){
-        window.alert = windowAlert
-        window.confirm = windowConfirm
-    }
-
 
     // Chargement des choix de cours
     form.style.display = 'none'
@@ -335,42 +326,52 @@ async function testeur(){
     form.style.display = ''
     await wait(50)
 
-    // Demande de l'horaire à l'utilisateur
+    // Détection de la liste d'horaires dans le presse-papier
     var horaires // {sigle: string, grTheo: string?, grLab: string?}[][]
     let horaires_str = await navigator.clipboard.readText().catch(e=>e) // Exemple : INF1007/T1/L1,INF3005I/T1;INF1007/T1/L1,INF3005I/T1
     const cours_regex = /^([\w-]+)(?:\/(T)(\d+))?(?:\/(L)(\d+))?$/
-    do {
-        alert(horaires_str)
-        if (horaires_str === false) return
-        try {
-            horaires = horaires_str.split(";").map(horaire=>horaire.split(",").map(cours=>{
-                const m = cours_regex.exec(cours)
-                let obj = {}
-                for(let i = 0; i < m.length; i+=2){
-                    let key
-                    switch(m[i]){
-                        case m[0]:
-                            key = "sigle"
-                            break
-                        case "T":
-                            key = "grTheo"
-                            break
-                        case "L":
-                            key = "grLab"
-                            break
-                        default:
-                            continue
-                    }
-                    obj[key] = m[i+1]
+    try {
+        horaires = horaires_str.split(";").map(horaire=>horaire.split(",").map(cours=>{
+            const m = cours_regex.exec(cours)
+            let obj = {}
+            for(let i = 0; i < m.length; i+=2){
+                let key
+                switch(m[i]){
+                    case m[0]:
+                        key = "sigle"
+                        break
+                    case "T":
+                        key = "grTheo"
+                        break
+                    case "L":
+                        key = "grLab"
+                        break
+                    default:
+                        continue
                 }
-                return obj
-            }))
-        } catch {
-            alert("Format invalide")
-            horaires = undefined
-            horaires_str = prompt("Veuillez entrer votre liste d'horaires.\n(Si vous n'avez pas de liste d'horaire, cliquer sur le bouton « Créer votre liste d'horaires ».)")
+                obj[key] = m[i+1]
+            }
+            return obj
+        }))
+    } catch {
+        if (confirm("Aucune liste d'horaire copiée.\nOuvrir le générateur d'horaires de l'AEP ?")){
+            open("https://beta.horaires.aep.polymtl.ca/?favoris", "_blank")
         }
-    } while (!horaires)
+        return
+    }
+
+    // Désactivation des messages d'alerte pour ne pas interrompre le testeur
+    const windowAlert = window.alert
+    var error // Variable qui stocke les messages pour les cours non disponibles
+    window.alert = function(message) {
+        if (message.includes("plus de places") || message.includes("n'existe pas")) error = message
+    }
+    const windowConfirm = window.confirm
+    window.confirm = ()=>{}
+    function resetWindowPopups(){
+        window.alert = windowAlert
+        window.confirm = windowConfirm
+    }
 
 
     console.log("%cTesteur d'horaires :)", 'font-size:2.5em')
