@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2024-12-15
+// @version      2.0-beta.7
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -10,47 +10,61 @@
 // @grant        none
 // ==/UserScript==
 
+const urlAEP = new URL("https://beta.horaires.aep.polymtl.ca/?favoris")
+const urlModif = new URL("https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet")
+const urlHelp = new URL("https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser")
+const windowAEP = "Générateur d'horaire"
+const cssAEP = '<link rel="stylesheet" href="https://beta.horaires.aep.polymtl.ca/pkg/aep-schedule-website.css">';
+
 (async function() {
     'use strict';
 
     switch(location.hostname){
-        case 'dossieretudiant.polymtl.ca':
+        case urlModif.hostname:
             if("sigle1" in document.forms[0]) testeur()
-            else if(location.pathname == "/WebEtudiant7/PresentationHorairePersServlet") creerInterfaceTesteur()
-            else location.href = "https://dossieretudiant.polymtl.ca/WebEtudiant7/ValidationServlet"
+            else if (location.pathname == "/WebEtudiant7/PresentationHorairePersServlet") creerInterfaceTesteur()
+            else location.pathname = "/WebEtudiant7/ValidationServlet"
             break
-        case 'beta.horaires.aep.polymtl.ca':
+        case urlAEP.hostname:
             gestionnaireDeFavoris()
             break
     }
 
 })();
 
-function creerInterfaceTesteur(active){
+function creerInterfaceTesteur(active = null){
     const titre = document.querySelector("form>.row:has(h3)")
-    const disabled = !active && active !== false
+    const disabled = active === null
     titre.insertAdjacentHTML('beforebegin',
         `<div ${disabled ? 'style="position:relative;top:-10px"' : ''}>
-            <style>
-                .pulse {
-                    animation: pulse 2s infinite;
-                }
-                @keyframes pulse {
-                    0% { box-shadow: 0 0 0 0px #aa0a }
-                    100% { box-shadow: 0 0 0 20px #aa00 }
-                }
-            </style>
-            <a id="open-aep" style="background-color:#ff03" href="https://beta.horaires.aep.polymtl.ca/?favoris" target="_blank">
-                Ouvrir/Créer votre liste d'horaires
-            </a>
             ${disabled ? "" :
-                `<input id="toggle-testeur" type="button"
+                `<input type="button"
                     value="${active ? "Fermer" : "Ouvrir"} le testeur d'horaires :)"
                     style="background-color:#${active ? "f0" : "0f"}03"
+                    onclick="${!active ?
+                        `if(opener?.window){
+                            window.open('', \`${windowAEP}\`)
+                        }else{
+                            location.assign('${urlAEP}')
+                        }`
+                        :
+                        `location.replace('${urlModif}')`
+                    }"
                 />`
             }
-            ${active ? '<input type="button" value="Rafraîchir" onclick="location.reload()" style="background-color:#00f3" />' : ""}
-            <a href="https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser" target="_blank">?</a>
+            ${!disabled && !active ? "" :
+                `<a onclick="
+                    if(opener?.window){
+                        window.open('', \`${windowAEP}\`)
+                    }else{
+                        ${disabled ? "window.open" : "location.assign"}('${urlAEP}')
+                    }"
+                style="background-color:#ff03">
+                    Modifier votre liste d'horaires favoris
+                </a>`
+            }
+            ${active ? '<a onclick="location.reload()" style="background-color:#00f3">Rafraîchir</a>' : ""}
+            <a href="${urlHelp}" target="_blank">?</a>
             ${disabled ? "" : '<table id="tests" style="width:100%"><thead><th style="width:max(10dvw,100px)"></th></thead><tbody /></table>'}
         </div>
         <hr />`)
@@ -58,6 +72,7 @@ function creerInterfaceTesteur(active){
 
 
 function gestionnaireDeFavoris(){
+    window.name = windowAEP
     // Affichage de la liste des favoris
     document.body.insertAdjacentHTML('beforeend',
         `<style>
@@ -129,13 +144,6 @@ function gestionnaireDeFavoris(){
                         Tester
                     </button>
                     <button
-                        data-tooltip="Copier la liste d'horaires sous forme de texte qui peut être utilisée dans le Testeur"
-                        style="background-color:#00fa"
-                        onclick="copyFavoris().then(()=>alert('Liste d\\'horaires copiée.\\nVous pouvez la coller dans le testeur.'))"
-                    >
-                        Copier
-                    </button>
-                    <button
                         data-tooltip="Ajouter des horaires depuis un fichier HTML"
                         style="background-color:#00fa"
                         onclick="importFavoris()"
@@ -156,7 +164,7 @@ function gestionnaireDeFavoris(){
                     >
                         Supprimer
                     </button>
-                    <button style="background-color:#555a" onclick="open('https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser', '_blank')">
+                    <button style="background-color:#555a" onclick="open('${urlHelp}', '_blank')">
                         ?
                     </button>
                 </div>
@@ -189,25 +197,21 @@ function gestionnaireDeFavoris(){
         window.setFavoris(favoris)
     }
 
-    window.testerFavoris = ()=>window.copyFavoris().then(()=>{
-        const url = 'https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet?testeur'
+    window.testerFavoris = async ()=>{
+        const horaires = [...document.getElementById("favoris-liste").querySelectorAll(".cours")]
+        const horaires_str = horaires.map(horaire=>{
+            const liste_cours = [...horaire.querySelectorAll("tr")]
+            return liste_cours.map(cours => {
+                return [...cours.children].toSpliced(1,1).map(e=>e.innerText).filter(txt=>txt).join("_").replace(/[\s:]/g, '')
+            }).join(".")
+        }).join("*") // Exemple : INF1007_T1_L1.INF3005I_T1*INF1007_T1_L1.INF3005I_T1
+
+        const url = urlModif+'?tests='+encodeURIComponent(horaires_str)
         if (window.testeur?.window) {
             window.testeur.focus()
             window.testeur.location.replace(url)
         }
         else window.testeur = open(url, '_blank')
-    })
-
-    // Copie des favoris
-    window.copyFavoris = async ()=>{
-        const horaires = [...document.getElementById("favoris-liste").querySelectorAll(".cours")]
-        const horaires_str = horaires.map(horaire=>{
-            const liste_cours = [...horaire.querySelectorAll("tr")]
-            return liste_cours.map(cours => {
-                return [...cours.children].toSpliced(1,1).map(e=>e.innerText).filter(txt=>txt).join("/").replace(/[\s:]/g, '')
-            }).join(",")
-        }).join(";") // Exemple : INF1007/T1/L1,INF3005I/T1;INF1007/T1/L1,INF3005I/T1
-        return navigator.clipboard.writeText(horaires_str)
     }
 
     // Importation/Exportation des favoris
@@ -219,7 +223,7 @@ function gestionnaireDeFavoris(){
             input.files.item(0).text()
                 .then(text=>{
                     try {
-                        if(!text.includes('<link rel="stylesheet" href="https://beta.horaires.aep.polymtl.ca/pkg/aep-schedule-website.css">')) throw new Error()
+                        if(!text.includes(cssAEP)) throw new Error()
                         const horaires = document.createElement("div")
                         horaires.innerHTML = text
                         const liste_horaires = [...horaires.querySelectorAll(":scope > div")].map(horaire=>horaire.innerHTML.replace(/<\/?tbody>/g,""))
@@ -236,7 +240,7 @@ function gestionnaireDeFavoris(){
         const a = document.createElement('a');
         a.href = 'data:attachment/html,' + encodeURI(
             '<style>body{display:flex;flex-wrap:wrap;justify-content:center;}</style>'
-            +'<link rel="stylesheet" href="https://beta.horaires.aep.polymtl.ca/pkg/aep-schedule-website.css">'
+            +cssAEP
             +window.getFavoris().map((favori,i)=>`<div style="padding:2em">${favori}</div>`).join("<hr />")
         );
         a.target = '_blank';
@@ -315,54 +319,18 @@ function gestionnaireDeFavoris(){
 
 
 async function testeur(){
-    const searchParam = "?testeur"
-    const active = location.search == "?testeur"
+    const urlParams = new URLSearchParams(location.search);
+    const horaires_str = urlParams.get('tests'); // Exemple : INF1007_T1_L1.INF3005I_T1*INF1007_T1_L1.INF3005I_T1
+    const active = horaires_str != null
 
     creerInterfaceTesteur(active)
-    document.getElementById("toggle-testeur").onclick = () => { location.href = location.href.split('?')[0] + (active ? "" : searchParam) }
 
     if(!active) return
 
-    async function wait(ms){
-        return new Promise(res => setTimeout(res, ms))
-    }
-
-
-    // Chargement des choix de cours
-    const form = document.forms[0]
-    form.style.display = 'none'
-    while(!window.cc) await wait(50)
-
-    // Enregistrement de l'horaire initial pour pouvoir y revenir
-    const initial_cc = JSON.parse(JSON.stringify(window.cc))
-    function reset(){
-        window.cc.copierChoix(initial_cc)
-        form.reset()
-        form.querySelector('input').onchange()
-        for (const choix of window.cc){
-            choix.modifie = false
-        }
-    }
-    var affichage_initial_cc = []
-    for (const [n_cours, cours] of Object.entries(window.ccTemp)){
-        if(cours.sigle){
-            affichage_initial_cc[parseInt(n_cours)] = (({ sigle, grTheo, grLab }) => ({ sigle, grTheo, grLab }))(cours)
-        }
-    }
-    console.group("Horaire initial")
-    console.table(affichage_initial_cc)
-    console.groupEnd()
-    const initial_sigles = affichage_initial_cc.map(cours=>cours.sigle)
-
-    form.style.display = ''
-    await wait(50)
-
-    // Détection de la liste d'horaires dans le presse-papier
     var horaires // {sigle: string, grTheo: string?, grLab: string?}[][]
-    let horaires_str = await navigator.clipboard.readText().catch(e=>e) // Exemple : INF1007/T1/L1,INF3005I/T1;INF1007/T1/L1,INF3005I/T1
-    const cours_regex = /^([\w-]+)(?:\/(T)(\d+))?(?:\/(L)(\d+))?$/
+    const cours_regex = /^([a-zA-Z0-9-]+)(?:_(T)(\d+))?(?:_(L)(\d+))?$/
     try {
-        horaires = horaires_str.split(";").map(horaire=>horaire.split(",").map(cours=>{
+        horaires = horaires_str.split("*").map(horaire=>horaire.split(".").map(cours=>{
             const m = cours_regex.exec(cours)
             let obj = {}
             for(let i = 0; i < m.length; i+=2){
@@ -385,12 +353,44 @@ async function testeur(){
             return obj
         }))
     } catch {
-        if(confirm("Aucune liste d'horaire copiée.\nOuvrir le générateur d'horaires de l'AEP ?")){
-            location.replace("https://beta.horaires.aep.polymtl.ca/?favoris")
-        }
-        document.getElementById("open-aep").classList.add("pulse")
+        alert("Liste d'horaires invalide")
+        if (opener?.window) close()
+        else location.replace(urlAEP)
         return
     }
+
+    async function wait(ms){
+        return new Promise(res => setTimeout(res, ms))
+    }
+
+    // Chargement de l'horaire initial
+    const form = document.forms[0]
+    form.style.display = 'none'
+    while(!window.cc) await wait(50)
+
+    // Enregistrement de l'horaire initial pour pouvoir y revenir
+    const initial_cc = JSON.parse(JSON.stringify(window.cc))
+    function reset(){
+        window.cc.copierChoix(initial_cc)
+        form.reset()
+        form.querySelector('input[type="text"]').onchange()
+        for (const choix of window.cc){
+            choix.modifie = false
+        }
+    }
+    var affichage_initial_cc = []
+    for (const [n_cours, cours] of Object.entries(window.ccTemp)){
+        if(cours.sigle){
+            affichage_initial_cc[parseInt(n_cours)] = (({ sigle, grTheo, grLab }) => ({ sigle, grTheo, grLab }))(cours)
+        }
+    }
+    console.group("Horaire initial")
+    console.table(affichage_initial_cc)
+    console.groupEnd()
+    const initial_sigles = affichage_initial_cc.map(cours=>cours.sigle)
+
+    form.style.display = ''
+    await wait(50)
 
     // Désactivation des messages d'alerte pour ne pas interrompre le testeur
     const windowAlert = alert
@@ -407,10 +407,13 @@ async function testeur(){
 
 
     console.log("%cTesteur d'horaires :)", 'font-size:2.5em')
+    // Affichage de la liste d'horaires
     document.querySelector("#tests>tbody").insertAdjacentHTML("beforeend",
         [...Array(horaires.length).keys()].map(i => `<tr id="test-${i+1}"><td><b>Horaire #${i+1}</b></td></tr>`).join("")
     )
+
     // Loop horaires
+    const fake_delay = Math.min(1000/horaires.length, 200)
     horaireLoop:
     for (const [n_horaire, horaire] of horaires.entries()){
         error = undefined
@@ -434,7 +437,7 @@ async function testeur(){
                 if (error){
                     console.log("%c"+error, 'color:red')
                     document.querySelector("#test-"+(n_horaire+1)).insertAdjacentHTML("beforeend", `<td style="color:red">${error}</td>`)
-                    await wait(100)
+                    await wait(fake_delay)
                     reset()
                     continue horaireLoop
                 }
@@ -464,6 +467,6 @@ ${isHoraireDifferent ? "- Pour conserver cet horaire, appuyez sur le bouton « E
     if(error){
         await wait(100)
         resetWindowPopups()
-        alert("Aucun horaire n'est disponible. :(\nEssayez de rafraîchir la page ou d'entrer d'autres horaires.")
+        alert("Aucun horaire n'est disponible. :(\nEssayez de rafraîchir la page ou de modifier votre liste d'horaires.")
     }
 }
