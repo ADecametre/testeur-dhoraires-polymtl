@@ -36,7 +36,10 @@ function creerInterfaceTesteur(active = null){
     const titre = document.querySelector("form>.row:has(h3)")
     const disabled = active === null
     titre.insertAdjacentHTML('beforebegin',
-        `<div ${disabled ? 'style="position:relative;top:-10px"' : ''}>
+        `<div style="${disabled
+            ? "position:relative;top:-10px"
+            : "position:sticky;top:0px;background-color:white;z-index:100;box-shadow:white 0px -10px 0 10px"
+        }">
             ${disabled ? "" :
                 `<input type="button"
                     value="${active ? "Fermer" : "Ouvrir"} le testeur d'horaires :)"
@@ -48,7 +51,7 @@ function creerInterfaceTesteur(active = null){
                             location.assign('${urlAEP}')
                         }`
                         :
-                        `location.replace('${urlModif}')`
+                        `location.assign('${urlModif}')`
                     }"
                 />`
             }
@@ -65,8 +68,8 @@ function creerInterfaceTesteur(active = null){
             }
             ${active ? '<a onclick="location.reload()" style="background-color:#00f3">Rafraîchir</a>' : ""}
             <a href="${urlHelp}" target="_blank">?</a>
-            ${disabled ? "" : '<table id="tests" style="width:100%"><thead><th style="width:max(10dvw,100px)"></th></thead><tbody /></table>'}
         </div>
+        ${disabled ? "" : '<table id="tests" style="width:100%"><thead><th style="width:max(10dvw,100px)"></th></thead><tbody /></table>'}
         <hr />`)
 }
 
@@ -436,7 +439,9 @@ async function testeur(){
                 // Si un des cours n'est pas disponible
                 if (error){
                     console.log("%c"+error, 'color:red')
-                    document.querySelector("#test-"+(n_horaire+1)).insertAdjacentHTML("beforeend", `<td style="color:red">${error}</td>`)
+                    const affichageTest = document.querySelector("#test-"+(n_horaire+1))
+                    affichageTest.insertAdjacentHTML("beforeend", `<td style="color:red">${error}</td>`)
+                    affichageTest.nextSibling?.scrollIntoView(false)
                     await wait(fake_delay)
                     reset()
                     continue horaireLoop
@@ -453,7 +458,10 @@ async function testeur(){
             input.onchange()
         }
         console.log("%cDisponible"+(isHoraireDifferent ? "" : " (horaire actuel)"), 'color:green')
-        document.querySelector("#test-"+(n_horaire+1)).insertAdjacentHTML("beforeend", `<td style="color:green">Disponible${isHoraireDifferent ? "" : " (horaire actuel)"}</td>`)
+        const affichageTest = document.querySelector("#test-"+(n_horaire+1))
+        affichageTest.insertAdjacentHTML("beforeend", `<td style="color:green">Disponible${isHoraireDifferent ? "" : " (horaire actuel)"}</td>`)
+        affichageTest.style = "position:sticky;top:54px;background-color:#dfd;box-shadow:#dfd 0 0 10px 5px;font-weight:bold"
+
         await wait(100)
         resetWindowPopups()
         alert(`L'horaire #${n_horaire+1} est disponible.${isHoraireDifferent ? " :)" : ""}
@@ -469,4 +477,7 @@ ${isHoraireDifferent ? "- Pour conserver cet horaire, appuyez sur le bouton « E
         resetWindowPopups()
         alert("Aucun horaire n'est disponible. :(\nEssayez de rafraîchir la page ou de modifier votre liste d'horaires.")
     }
+
+    await wait(100)
+    form.sigle1.scrollIntoView({behavior: "smooth", block: "center"})
 }
