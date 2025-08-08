@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.10
+// @version      2.0-beta.11
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -90,6 +90,8 @@ function gestionnaireDeFavoris(){
                 border-radius: 10px;
             }
             #favoris-dialog {
+                align-self: center;
+                justify-self: center;
                 border-radius: 5px;
                 border: 2px black solid;
                 box-shadow: black 0 0 10px 2px;
