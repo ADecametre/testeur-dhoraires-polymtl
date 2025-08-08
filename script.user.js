@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.9
+// @version      2.0-beta.10
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -183,7 +183,11 @@ function gestionnaireDeFavoris(){
 
     // Fonctions de modification du localStorage
     window.getFavoris = ()=>JSON.parse(localStorage.getItem("favoris") || "[]")
-    window.setFavoris = favoris=>localStorage.setItem("favoris", JSON.stringify(favoris))
+    window.setFavoris = favoris=>{
+        localStorage.setItem("favoris", JSON.stringify(favoris))
+        updateListe()
+        updateBoutons()
+    }
     window.addFavori = favori=>{
         const favoris = window.getFavoris()
         favoris.push(favori)
@@ -261,11 +265,6 @@ function gestionnaireDeFavoris(){
     }
 
     // Synchronisation de la liste affichée avec celle enregistrée dans localStorage
-    const localStorageSetItem = localStorage.setItem
-    window.localStorage.setItem = function(key, value) {
-        localStorageSetItem.apply(this, arguments)
-        if (key == "favoris") document.dispatchEvent(new Event("favorisModifiés"))
-    }
     function updateListe(){
         const favoris = window.getFavoris()
 
@@ -306,7 +305,6 @@ function gestionnaireDeFavoris(){
         })
     }
     updateListe()
-    document.addEventListener("favorisModifiés", updateListe)
 
     // Affichage des boutons favori
     function creerBouton(coursHTML){
@@ -336,7 +334,6 @@ function gestionnaireDeFavoris(){
     }
     const observer = new MutationObserver(updateBoutons)
     observer.observe(document.querySelector('main>.right-panel'), {childList: true})
-    document.addEventListener("favorisModifiés", updateBoutons)
 }
 
 
