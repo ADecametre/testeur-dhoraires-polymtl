@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.11
+// @version      2.0-beta.12
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -471,14 +471,13 @@ async function testeur(){
             }
         }
         // Si l'horaire est disponible
-        const isHoraireDifferent = window.cc.some(cours => cours.modifie)
-        while(n_modifie<window.cc.length){
+        for(let i = window.cc.length-1; i > n_modifie; i--){
             // Effacer les inputs restants
-            n_modifie++
-            let input = form["sigle"+n_modifie]
+            let input = form["sigle"+i]
             input.value = ""
             input.onchange()
         }
+        const isHoraireDifferent = window.cc.some(cours => cours.modifie)
         console.log("%cDisponible"+(isHoraireDifferent ? "" : " (horaire actuel)"), 'color:green')
         const affichageTest = document.querySelector("#test-"+(n_horaire+1))
         affichageTest.insertAdjacentHTML("beforeend", `<td style="color:green">Disponible${isHoraireDifferent ? "" : " (horaire actuel)"}</td>`)
