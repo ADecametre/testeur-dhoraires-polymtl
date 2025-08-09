@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.12
+// @version      2.0-beta.13
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -45,7 +45,7 @@ function creerInterfaceTesteur(active = null){
                     style="background-color:#${active ? "f0" : "0f"}03"
                     onclick="${!active ?
                         `if(opener?.window){
-                            window.open('', \`${windowAEP}\`)
+                            window.open('${urlAEP}', \`${windowAEP}\`)
                         }else{
                             location.assign('${urlAEP}')
                         }`
@@ -57,7 +57,7 @@ function creerInterfaceTesteur(active = null){
             ${!disabled && !active ? "" :
                 `<a onclick="
                     if(opener?.window){
-                        window.open('', \`${windowAEP}\`)
+                        window.open('${urlAEP}', \`${windowAEP}\`)
                     }else{
                         ${disabled ? "window.open" : "location.assign"}('${urlAEP}')
                     }"
