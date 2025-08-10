@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.14
+// @version      2.0-beta.15
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -491,6 +491,7 @@ async function testeur(){
         for(let i = window.cc.length-1; i > n_modifie; i--){
             // Effacer les inputs restants
             let input = form["sigle"+i]
+            if(input.value == "") continue;
             input.value = ""
             input.onchange()
         }
