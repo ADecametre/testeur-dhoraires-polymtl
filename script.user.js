@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.13
+// @version      2.0-beta.14
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -14,6 +14,10 @@ const urlAEP = new URL("https://beta.horaires.aep.polymtl.ca/#favoris")
 const urlModif = new URL("https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet")
 const urlHelp = new URL("https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser")
 const windowAEP = "Générateur d'horaire";
+
+// Liste de mots clés qui déterminent qu'un horaire n'est pas disponible
+const motsClesNonDisponible = ["plus de places", "n'existe pas", "déjà", "Il n'y a pas de",
+    "ne peut être modifié", "vous devez contacter", "est absent pour le cours"];
 
 (async function() {
     'use strict';
@@ -418,7 +422,7 @@ async function testeur(){
     const windowAlert = alert
     var error // Variable qui stocke les messages pour les cours non disponibles
     window.alert = message => {
-        if (message.includes("plus de places") || message.includes("n'existe pas")) error = message
+        if (motsClesNonDisponible.some(s=>message.includes(s))) error = message
     }
     const windowConfirm = confirm
     window.confirm = ()=>{}
@@ -471,6 +475,7 @@ async function testeur(){
             }
         }
         // Si l'horaire est disponible
+        resetWindowPopups()
         for(let i = window.cc.length-1; i > n_modifie; i--){
             // Effacer les inputs restants
             let input = form["sigle"+i]
@@ -486,7 +491,6 @@ async function testeur(){
         await wait(100)
         window.opener?.postMessage(horaires_str.split("*")[n_horaire], urlAEP.origin)
         window.onbeforeunload = () => { window.opener?.postMessage(null, urlAEP.origin) }
-        resetWindowPopups()
         alert(`L'horaire #${n_horaire+1} est disponible.${isHoraireDifferent ? " :)" : ""}
 ${isHoraireDifferent ? "- Pour conserver cet horaire, appuyez sur le bouton « Enregistrer »." : "Il s'agit du même horaire actuel."}
 - Pour obtenir les résultats les plus récents, rafraîchissez la page.`)
