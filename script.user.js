@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.13
+// @version      2.0-beta.14
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -387,6 +387,11 @@ async function testeur(){
 
     // Chargement de l'horaire initial
     const form = document.forms[0]
+
+    // Undo autocomplétion Firefox
+    form.reset()
+    window.initialiser()
+
     form.style.display = 'none'
     while(!window.cc) await wait(50)
 
