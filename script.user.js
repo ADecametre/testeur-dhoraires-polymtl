@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.15
+// @version      2.0-beta.16
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -223,7 +223,7 @@ function gestionnaireDeFavoris(){
         const horaires_str = horaires.map(horaire => horaire.dataset.horaire).join("*") // Exemple : INF1007_T1_L1.INF3005I_T1*INF1007_T1_L1.INF3005I_T1
 
         const url = urlModif+'#tests='+encodeURIComponent(horaires_str)
-        if (window.testeur?.window) {
+        if (window.testeur && !window.testeur.closed) {
             window.testeur.focus()
             window.testeur.location.replace(url)
         }
