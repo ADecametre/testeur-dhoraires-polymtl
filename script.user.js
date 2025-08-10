@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.13
+// @version      2.0-beta.14
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -34,6 +34,7 @@ const windowAEP = "Générateur d'horaire";
 function creerInterfaceTesteur(active = null){
     const titre = document.querySelector("form>.row:has(h3)")
     const disabled = active === null
+    const isFormulaireReset = [...document.forms[0].elements].every(e=>!["sigle","gr"].some(t=>e.name.startsWith(t))||e.value==e.defaultValue);
     titre.insertAdjacentHTML('beforebegin',
         `<div style="${disabled
             ? "position:relative;top:-10px"
@@ -69,7 +70,18 @@ function creerInterfaceTesteur(active = null){
             <a href="${urlHelp}" target="_blank">?</a>
         </div>
         ${disabled ? "" : '<table id="tests" style="width:max-content"><thead><th style="width:max(10dvw,100px)"></th></thead><tbody /></table>'}
-        <hr />`)
+        <hr />
+        <small id="erreur-autocomplete" style="color:red${active || isFormulaireReset ? ";display:none" : ""}">
+            Votre navigateur a rempli automatiquement le formulaire, ce qui brise le fonctionnement du site.
+            <a href="https://github.com/ADecametre/testeur-dhoraires-polymtl/issues/15"
+                target="_blank" style="background:none;border:none;font-size:0.5em">En savoir plus</a>
+            <br/>
+            Cliquez pour remettre votre horaire actuel.
+        </small>
+        <br/>
+        <input type="reset" value="Réinitialiser"
+            onclick='setTimeout(()=>initialiser(),250);document.getElementById("erreur-autocomplete").style.display="none"'>
+        `)
         if(!disabled) document.querySelector(".container").style = "min-width: min(768px,95dvw)"
 }
 
@@ -387,6 +399,11 @@ async function testeur(){
 
     // Chargement de l'horaire initial
     const form = document.forms[0]
+
+    // Undo autocomplétion Firefox
+    form.reset()
+    window.initialiser()
+
     form.style.display = 'none'
     while(!window.cc) await wait(50)
 
