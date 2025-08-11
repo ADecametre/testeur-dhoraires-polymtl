@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.14
+// @version      2.0-beta.17
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -421,11 +421,20 @@ async function testeur(){
     // Désactivation des messages d'alerte pour ne pas interrompre le testeur
     const windowAlert = alert
     var error // Variable qui stocke les messages pour les cours non disponibles
+    var affichageTest // Variable qui stocke l'élément HTML où insérer les messages
     window.alert = message => {
         if (motsClesNonDisponible.some(s=>message.includes(s))) error = message
+        const couleur = 'color:'+error ? "red" : "gray";
+        const taille = message.startsWith("»") ? ";font-size:0.7em;margin:0;color:darkturquoise;font-weight:bold" : "";
+        console.log("%c"+message, couleur+taille)
+        affichageTest?.querySelector("ul").insertAdjacentHTML("beforeend", `<li style="${couleur}${taille}">${message}</li>`)
     }
     const windowConfirm = confirm
-    window.confirm = ()=>{}
+    window.confirm = message => {
+        const couleur = 'color:'+error?"red":"gray";
+        console.log("%c"+message, couleur)
+        affichageTest?.querySelector("ul").insertAdjacentHTML("beforeend", `<li style="${couleur}">${message}</li>`)
+    }
     function resetWindowPopups(){
         window.alert = windowAlert
         window.confirm = windowConfirm
@@ -437,7 +446,7 @@ async function testeur(){
     document.querySelector("#tests>tbody").insertAdjacentHTML("beforeend",
         [...Array(horaires.length).keys()].map(i =>{
             const texte = `Horaire #${i+1}`
-            return `<tr id="test-${i+1}"><td><b title="${texte} : ${horaires_str.split("*")[i]}">${texte}</b></td></tr>`
+            return `<tr id="test-${i+1}"><td><b title="${texte} : ${horaires_str.split("*")[i]}">${texte}</b></td><td><ul></ul></td></tr>`
         }).join("")
     )
 
@@ -446,6 +455,7 @@ async function testeur(){
     horaireLoop:
     for (const [n_horaire, horaire] of horaires.entries()){
         error = undefined
+        affichageTest = undefined
         console.groupEnd()
         console.group("Horaire #"+(n_horaire+1))
         console.table(horaire)
@@ -455,8 +465,10 @@ async function testeur(){
         // Loop cours
         for (const [n_cours, cours] of horaire.entries()){
             n_modifie++
+            affichageTest = document.querySelector("#test-"+(n_horaire+1))
             // Loop propriétés (sigle, grTheo, grLab)
             for (const [input_name, input_value] of Object.entries(cours).filter(([,v])=>v)){
+                alert(`» ${input_name+(n_cours+1)} = ${input_value}`)
                 // Modification du input
                 let input = form[input_name.toLowerCase()+(n_cours+1)]
                 if (input.value == input_value.toUpperCase() || (!isNaN(input_value) && input.value == parseInt(input_value))) continue
@@ -464,9 +476,8 @@ async function testeur(){
                 input.onchange()
                 // Si un des cours n'est pas disponible
                 if (error){
-                    console.log("%c"+error, 'color:red')
-                    const affichageTest = document.querySelector("#test-"+(n_horaire+1))
-                    affichageTest.insertAdjacentHTML("beforeend", `<td style="color:red">${error}</td>`)
+                    affichageTest.querySelector("li:last-of-type").style.color="red";
+                    // affichageTest.insertAdjacentHTML("beforeend", `<td style="color:red">${error}</td>`)
                     affichageTest.nextSibling?.scrollIntoView(false)
                     await wait(fake_delay)
                     reset()
@@ -484,8 +495,8 @@ async function testeur(){
         }
         const isHoraireDifferent = window.cc.some(cours => cours.modifie)
         console.log("%cDisponible"+(isHoraireDifferent ? "" : " (horaire actuel)"), 'color:green')
-        const affichageTest = document.querySelector("#test-"+(n_horaire+1))
-        affichageTest.insertAdjacentHTML("beforeend", `<td style="color:green">Disponible${isHoraireDifferent ? "" : " (horaire actuel)"}</td>`)
+        // const affichageTest = document.querySelector("#test-"+(n_horaire+1))
+        affichageTest.querySelector("ul").insertAdjacentHTML("beforeend", `<li style="color:green">Disponible${isHoraireDifferent ? "" : " (horaire actuel)"}</li>`)
         affichageTest.style = "position:sticky;top:54px;background-color:#dfd;box-shadow:#dfd 0 0 10px 5px;font-weight:bold"
 
         await wait(100)
