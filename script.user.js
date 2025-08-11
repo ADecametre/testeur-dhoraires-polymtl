@@ -38,6 +38,7 @@ const motsClesNonDisponible = ["plus de places", "n'existe pas", "déjà", "Il n
 function creerInterfaceTesteur(active = null){
     const titre = document.querySelector("form>.row:has(h3)")
     const disabled = active === null
+    const isFormulaireReset = [...document.forms[0].elements].every(e=>!["sigle","gr"].some(t=>e.name.startsWith(t))||e.value==e.defaultValue);
     titre.insertAdjacentHTML('beforebegin',
         `<div style="${disabled
             ? "position:relative;top:-10px"
@@ -86,7 +87,18 @@ function creerInterfaceTesteur(active = null){
                 <table id="tests" style="width:max-content"><thead><th style="width:max(10dvw,100px)"></th></thead><tbody /></table>
             </div>
         `}
-        <hr />`)
+        <hr />
+        <small id="erreur-autocomplete" style="color:red${active || isFormulaireReset ? ";display:none" : ""}">
+            Votre navigateur a rempli automatiquement le formulaire, ce qui brise le fonctionnement du site.
+            <a href="https://github.com/ADecametre/testeur-dhoraires-polymtl/issues/15"
+                target="_blank" style="background:none;border:none;font-size:0.5em">En savoir plus</a>
+            <br/>
+            Cliquez pour remettre votre horaire actuel.
+        </small>
+        <br/>
+        <input type="reset" value="Réinitialiser"
+            onclick='setTimeout(()=>initialiser(),250);document.getElementById("erreur-autocomplete").style.display="none"'>
+        `)
         if(!disabled) document.querySelector(".container").style = "min-width: min(768px,95dvw)"
 }
 
@@ -228,7 +240,7 @@ function gestionnaireDeFavoris(){
         const horaires_str = horaires.map(horaire => horaire.dataset.horaire).join("*") // Exemple : INF1007_T1_L1.INF3005I_T1*INF1007_T1_L1.INF3005I_T1
 
         const url = urlModif+'#tests='+encodeURIComponent(horaires_str)
-        if (window.testeur?.window) {
+        if (window.testeur && !window.testeur.closed) {
             window.testeur.focus()
             window.testeur.location.replace(url)
         }
@@ -404,6 +416,11 @@ async function testeur(){
 
     // Chargement de l'horaire initial
     const form = document.forms[0]
+
+    // Undo autocomplétion Firefox
+    form.reset()
+    window.initialiser()
+
     form.style.display = 'none'
     while(!window.cc) await wait(50)
 
@@ -504,6 +521,7 @@ async function testeur(){
         for(let i = window.cc.length-1; i > n_modifie; i--){
             // Effacer les inputs restants
             let input = form["sigle"+i]
+            if(input.value == "") continue;
             input.value = ""
             input.onchange()
         }
