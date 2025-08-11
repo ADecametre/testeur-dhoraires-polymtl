@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.16
+// @version      2.0-beta.17
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -14,6 +14,10 @@ const urlAEP = new URL("https://beta.horaires.aep.polymtl.ca/#favoris")
 const urlModif = new URL("https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet")
 const urlHelp = new URL("https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser")
 const windowAEP = "Générateur d'horaire";
+
+// Liste de mots clés qui déterminent qu'un horaire n'est pas disponible
+const motsClesNonDisponible = ["plus de places", "n'existe pas", "déjà", "Il n'y a pas de",
+    "ne peut être modifié", "vous devez contacter", "est absent pour le cours"];
 
 (async function() {
     'use strict';
@@ -69,7 +73,20 @@ function creerInterfaceTesteur(active = null){
             ${active ? '<a onclick="location.reload()" style="background-color:#00f3">Rafraîchir</a>' : ""}
             <a href="${urlHelp}" target="_blank">?</a>
         </div>
-        ${disabled ? "" : '<table id="tests" style="width:max-content"><thead><th style="width:max(10dvw,100px)"></th></thead><tbody /></table>'}
+        ${disabled ? "" : `
+            <style>
+                #tests ul,li{margin-block:0.4em}
+                #tests li:not(:last-child){zoom:90%;line-height:1.2em}
+                #tests:not([data-log="on"]) li:not(:last-child){display:none}
+            </style>
+            <div>
+                <label style="position:sticky;top:50px;background-color:white;padding:0.5em">
+                    <input type="checkbox" onclick='document.getElementById("tests").dataset.log = this.checked ? "on" : "off"' />
+                    Afficher tous les messages
+                </label>
+                <table id="tests" style="width:max-content"><thead><th style="width:max(10dvw,100px)"></th></thead><tbody /></table>
+            </div>
+        `}
         <hr />
         <small id="erreur-autocomplete" style="color:red${active || isFormulaireReset ? ";display:none" : ""}">
             Votre navigateur a rempli automatiquement le formulaire, ce qui brise le fonctionnement du site.
@@ -434,11 +451,21 @@ async function testeur(){
     // Désactivation des messages d'alerte pour ne pas interrompre le testeur
     const windowAlert = alert
     var error // Variable qui stocke les messages pour les cours non disponibles
+    var affichageTest // Variable qui stocke l'élément HTML où insérer les messages
+    logMessages = message => {
+        const couleur = 'color:'+error ? "red" : "gray";
+        const taille = message.startsWith("»") ? ";font-size:0.8em;margin:0;color:darkturquoise;font-weight:bold" : "";
+        console.log("%c"+message, couleur+taille)
+        affichageTest?.querySelector("ul").insertAdjacentHTML("beforeend",
+            `<li style="${couleur}${taille}">${message.replaceAll("\n","<br/>")}</li>`
+        )
+    }
     window.alert = message => {
-        if (message.includes("plus de places") || message.includes("n'existe pas")) error = message
+        if (motsClesNonDisponible.some(s=>message.includes(s))) error = message
+        logMessages(message)
     }
     const windowConfirm = confirm
-    window.confirm = ()=>{}
+    window.confirm = message => logMessages(message)
     function resetWindowPopups(){
         window.alert = windowAlert
         window.confirm = windowConfirm
@@ -450,7 +477,7 @@ async function testeur(){
     document.querySelector("#tests>tbody").insertAdjacentHTML("beforeend",
         [...Array(horaires.length).keys()].map(i =>{
             const texte = `Horaire #${i+1}`
-            return `<tr id="test-${i+1}"><td><b title="${texte} : ${horaires_str.split("*")[i]}">${texte}</b></td></tr>`
+            return `<tr id="test-${i+1}"><td><b title="${texte} : ${horaires_str.split("*")[i]}">${texte}</b></td><td><ul></ul></td></tr>`
         }).join("")
     )
 
@@ -459,6 +486,7 @@ async function testeur(){
     horaireLoop:
     for (const [n_horaire, horaire] of horaires.entries()){
         error = undefined
+        affichageTest = undefined
         console.groupEnd()
         console.group("Horaire #"+(n_horaire+1))
         console.table(horaire)
@@ -468,8 +496,10 @@ async function testeur(){
         // Loop cours
         for (const [n_cours, cours] of horaire.entries()){
             n_modifie++
+            affichageTest = document.querySelector("#test-"+(n_horaire+1))
             // Loop propriétés (sigle, grTheo, grLab)
             for (const [input_name, input_value] of Object.entries(cours).filter(([,v])=>v)){
+                alert(`» ${input_name+(n_cours+1)} = ${input_value}`)
                 // Modification du input
                 let input = form[input_name.toLowerCase()+(n_cours+1)]
                 if (input.value == input_value.toUpperCase() || (!isNaN(input_value) && input.value == parseInt(input_value))) continue
@@ -477,9 +507,8 @@ async function testeur(){
                 input.onchange()
                 // Si un des cours n'est pas disponible
                 if (error){
-                    console.log("%c"+error, 'color:red')
-                    const affichageTest = document.querySelector("#test-"+(n_horaire+1))
-                    affichageTest.insertAdjacentHTML("beforeend", `<td style="color:red">${error}</td>`)
+                    affichageTest.querySelector("li:last-of-type").style.color="red";
+                    // affichageTest.insertAdjacentHTML("beforeend", `<td style="color:red">${error}</td>`)
                     affichageTest.nextSibling?.scrollIntoView(false)
                     await wait(fake_delay)
                     reset()
@@ -488,6 +517,7 @@ async function testeur(){
             }
         }
         // Si l'horaire est disponible
+        resetWindowPopups()
         for(let i = window.cc.length-1; i > n_modifie; i--){
             // Effacer les inputs restants
             let input = form["sigle"+i]
@@ -497,14 +527,13 @@ async function testeur(){
         }
         const isHoraireDifferent = window.cc.some(cours => cours.modifie)
         console.log("%cDisponible"+(isHoraireDifferent ? "" : " (horaire actuel)"), 'color:green')
-        const affichageTest = document.querySelector("#test-"+(n_horaire+1))
-        affichageTest.insertAdjacentHTML("beforeend", `<td style="color:green">Disponible${isHoraireDifferent ? "" : " (horaire actuel)"}</td>`)
-        affichageTest.style = "position:sticky;top:54px;background-color:#dfd;box-shadow:#dfd 0 0 10px 5px;font-weight:bold"
+        // const affichageTest = document.querySelector("#test-"+(n_horaire+1))
+        affichageTest.querySelector("ul").insertAdjacentHTML("beforeend", `<li style="color:green">Disponible${isHoraireDifferent ? "" : " (horaire actuel)"}</li>`)
+        affichageTest.style = "position:sticky;top:80px;background-color:#dfd;box-shadow:#dfd 0 0 10px 5px;font-weight:bold"
 
         await wait(100)
         window.opener?.postMessage(horaires_str.split("*")[n_horaire], urlAEP.origin)
         window.onbeforeunload = () => { window.opener?.postMessage(null, urlAEP.origin) }
-        resetWindowPopups()
         alert(`L'horaire #${n_horaire+1} est disponible.${isHoraireDifferent ? " :)" : ""}
 ${isHoraireDifferent ? "- Pour conserver cet horaire, appuyez sur le bouton « Enregistrer »." : "Il s'agit du même horaire actuel."}
 - Pour obtenir les résultats les plus récents, rafraîchissez la page.`)
