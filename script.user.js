@@ -454,7 +454,7 @@ async function testeur(){
     var affichageTest // Variable qui stocke l'élément HTML où insérer les messages
     logMessages = message => {
         const couleur = 'color:'+error ? "red" : "gray";
-        const taille = message.startsWith("»") ? ";font-size:0.7em;margin:0;color:darkturquoise;font-weight:bold" : "";
+        const taille = message.startsWith("»") ? ";font-size:0.8em;margin:0;color:darkturquoise;font-weight:bold" : "";
         console.log("%c"+message, couleur+taille)
         affichageTest?.querySelector("ul").insertAdjacentHTML("beforeend",
             `<li style="${couleur}${taille}">${message.replaceAll("\n","<br/>")}</li>`
