@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.17
+// @version      2.0-beta.18
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -453,7 +453,7 @@ async function testeur(){
     var error // Variable qui stocke les messages pour les cours non disponibles
     var affichageTest // Variable qui stocke l'élément HTML où insérer les messages
     logMessages = message => {
-        const couleur = 'color:'+error ? "red" : "gray";
+        const couleur = 'color:'+(error ? "red" : "gray");
         const taille = message.startsWith("»") ? ";font-size:0.8em;margin:0;color:darkturquoise;font-weight:bold" : "";
         console.log("%c"+message, couleur+taille)
         affichageTest?.querySelector("ul").insertAdjacentHTML("beforeend",
@@ -495,25 +495,32 @@ async function testeur(){
         horaire.sort((a, b) => initial_sigles.includes(a.sigle) ? initial_sigles.indexOf(a.sigle) - initial_sigles.indexOf(b.sigle) : 1);
         // Loop cours
         for (const [n_cours, cours] of horaire.entries()){
-            n_modifie++
             affichageTest = document.querySelector("#test-"+(n_horaire+1))
+            let n_sigle = "sigle"+(n_cours+1)
+            while(form[n_sigle].value && cours.sigle != form[n_sigle].value){
+                alert(`» ${n_sigle} = `)
+                form[n_sigle].value = ""
+                form[n_sigle].onchange()
+                if(error) break
+            }
+            n_modifie++
             // Loop propriétés (sigle, grTheo, grLab)
             for (const [input_name, input_value] of Object.entries(cours).filter(([,v])=>v)){
+                if(error) break
                 alert(`» ${input_name+(n_cours+1)} = ${input_value}`)
                 // Modification du input
                 let input = form[input_name.toLowerCase()+(n_cours+1)]
                 if (input.value == input_value.toUpperCase() || (!isNaN(input_value) && input.value == parseInt(input_value))) continue
                 input.value = input_value
                 input.onchange()
-                // Si un des cours n'est pas disponible
-                if (error){
-                    affichageTest.querySelector("li:last-of-type").style.color="red";
-                    // affichageTest.insertAdjacentHTML("beforeend", `<td style="color:red">${error}</td>`)
-                    affichageTest.nextSibling?.scrollIntoView(false)
-                    await wait(fake_delay)
-                    reset()
-                    continue horaireLoop
-                }
+            }
+            if (error){
+                affichageTest.querySelector("li:last-of-type").style.color="red";
+                // affichageTest.insertAdjacentHTML("beforeend", `<td style="color:red">${error}</td>`)
+                affichageTest.nextSibling?.scrollIntoView(false)
+                await wait(fake_delay)
+                reset()
+                continue horaireLoop
             }
         }
         // Si l'horaire est disponible
