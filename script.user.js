@@ -1,17 +1,17 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.18
+// @version      2.0-beta.19
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
-// @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet*
+// @match        http://localhost:5500/WebEtudiant7/ChoixCoursServlet*
 // @match        https://beta.horaires.aep.polymtl.ca/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=polymtl.ca
 // @grant        none
 // ==/UserScript==
 
 const urlAEP = new URL("https://beta.horaires.aep.polymtl.ca/#favoris")
-const urlModif = new URL("https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet")
+const urlModif = new URL("http://localhost:5500/WebEtudiant7/ChoixCoursServlet")
 const urlHelp = new URL("https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser")
 const windowAEP = "Générateur d'horaire";
 
@@ -108,6 +108,34 @@ function gestionnaireDeFavoris(){
     // Affichage de la liste des favoris
     document.body.insertAdjacentHTML('beforeend',
         `<style>
+            #conditions-dialog {
+                z-index: 100;
+                width: min(80dvh,90dvw);
+                h1 { font-size: 2em; }
+                p {
+                    padding: 0.2em;
+                    text-align: justify;
+                }
+                label, button { cursor: pointer; }
+                button { border: 1px black solid; }
+                div {
+                    display: flex;
+                    justify-content: space-around;
+                    align-items: center;
+                }
+            }
+            #conditions-dialog-toggle {
+                position: fixed;
+                bottom: 0px;
+                right: 14em;
+                z-index: 100;
+                font-size: 0.7em;
+                box-shadow: 1px 1px 5px 5px white;
+                background: white;
+                border-radius: 20px;
+                margin: 5px 0px;
+                cursor: pointer;
+            }
             .favoris-dialog-toggle {
                 background-color: yellow;
                 position: fixed;
@@ -118,18 +146,18 @@ function gestionnaireDeFavoris(){
                 filter: drop-shadow(black 0px 0px 10px);
                 border-radius: 10px;
             }
-            #favoris-dialog {
+            #favoris-dialog, #conditions-dialog {
                 align-self: center;
                 justify-self: center;
                 border-radius: 5px;
                 border: 2px black solid;
                 box-shadow: black 0 0 10px 2px;
             }
-            #favoris-liste, #favoris-dialog-buttons>div { padding: 1em }
-            #favoris-dialog::backdrop { backdrop-filter: blur(2px) }
+            #favoris-liste, #favoris-dialog-buttons>div, #conditions-dialog { padding: 1em }
+            #favoris-dialog::backdrop, #conditions-dialog::backdrop { backdrop-filter: blur(2px) }
             #favoris-dialog-buttons { position: sticky; top: 0px; z-index: 100; background-color:white; box-shadow: black 0 0 10px 2px }
             #favoris-dialog-buttons>div { display: flex; justify-content: space-evenly }
-            #favoris-dialog-buttons button { padding: 0.5em; border-radius: 10px }
+            #favoris-dialog-buttons button, #conditions-dialog button { padding: 0.5em; border-radius: 10px }
             #favoris-liste>hr { margin-block: 1em }
             #favoris-liste>div {
                 display: grid;
@@ -161,6 +189,32 @@ function gestionnaireDeFavoris(){
                 font-size: 0.75em;
             }
         </style>
+        <a id="conditions-dialog-toggle" onclick='document.getElementById("conditions-dialog").showModal()'>
+            Conditions d'utilisation
+        </a>
+        <dialog id="conditions-dialog">
+            <h1>Bienvenue dans le Testeur d'horaires :)</h1>
+            <br />
+            <p>Merci d'avoir installé ce programme. :)</p>
+            <br />
+            <p>En utilisant ce programme, vous dégagez l'auteur de toute responsabilité en cas de dysfonctionnement.</p>
+            <p>Le Testeur pourrait ne pas fonctionner ou cesser de fonctionner correctement s'il y a des bogues, 
+            des cas non anticipés par l'auteur, ou des modifications dans le code du dossier étudiant.</p>
+            <p>Le Testeur ne cliquera jamais sur le bouton <i>Enregistrer</i> à votre place. 
+            Vous êtes responsable de vérifier tout ce que le Testeur aura rempli.</p>
+            <p>Veuillez prévoir que vous pourriez avoir à rentrer manuellement vos horaires en cas de dysfonctionnement.</p>
+            <br />
+            <div>
+                <label>
+                    <input type="checkbox" id="conditions-checkbox">
+                    Ne plus afficher
+                </label>
+                <button autofocus onclick='document.getElementById("conditions-dialog").close();
+                localStorage.setItem("afficher-conditions",!document.getElementById("conditions-checkbox").checked)'>
+                    Accepter
+                </button>
+            </div>
+        </dialog>
         <button class="favoris-dialog-toggle" onclick="document.getElementById('favoris-dialog').showModal()">
             Afficher les favoris
         </button>
@@ -206,11 +260,16 @@ function gestionnaireDeFavoris(){
             </div>
             <div id="favoris-liste"></div>
         </dialog>`)
+
     const dialog = document.getElementById("favoris-dialog");
     if(location.hash == urlAEP.hash) dialog.showModal()
     dialog.addEventListener("click", event => {
         if (event.target === dialog) dialog.close();
     });
+
+    // Afficher les « conditions d'utilisation »
+    if(localStorage.getItem("afficher-conditions")!="false")
+        document.getElementById("conditions-dialog").showModal()
 
     // Fonctions de modification du localStorage
     window.getFavoris = ()=>JSON.parse(localStorage.getItem("favoris") || "[]")
