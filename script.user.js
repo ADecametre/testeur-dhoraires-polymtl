@@ -1,17 +1,17 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0-beta.19
+// @version      2.0-beta.20
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
-// @match        http://localhost:5500/WebEtudiant7/ChoixCoursServlet*
+// @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet*
 // @match        https://beta.horaires.aep.polymtl.ca/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=polymtl.ca
 // @grant        none
 // ==/UserScript==
 
 const urlAEP = new URL("https://beta.horaires.aep.polymtl.ca/#favoris")
-const urlModif = new URL("http://localhost:5500/WebEtudiant7/ChoixCoursServlet")
+const urlModif = new URL("https://dossieretudiant.polymtl.ca/WebEtudiant7/ChoixCoursServlet")
 const urlHelp = new URL("https://github.com/ADecametre/testeur-dhoraires-polymtl#comment-lutiliser")
 const windowAEP = "Générateur d'horaire";
 
@@ -210,7 +210,8 @@ function gestionnaireDeFavoris(){
                     Ne plus afficher
                 </label>
                 <button autofocus onclick='document.getElementById("conditions-dialog").close();
-                localStorage.setItem("afficher-conditions",!document.getElementById("conditions-checkbox").checked)'>
+                    localStorage.setItem("cacher-conditions",document.getElementById("conditions-checkbox").checked
+                        ? document.getElementById("conditions-dialog").innerText : "")'>
                     Accepter
                 </button>
             </div>
@@ -268,8 +269,18 @@ function gestionnaireDeFavoris(){
     });
 
     // Afficher les « conditions d'utilisation »
-    if(localStorage.getItem("afficher-conditions")!="false")
-        document.getElementById("conditions-dialog").showModal()
+    const conditions = document.getElementById("conditions-dialog")
+    const cacherConditions = localStorage.getItem("cacher-conditions") == conditions.innerText;
+    document.getElementById("conditions-checkbox").checked = cacherConditions;
+    if(!cacherConditions) conditions.showModal()
+
+    // Afficher les mises à jour
+    const vStockee = localStorage.getItem("v"), vActuelle = GM_info.script.version;
+    if(vStockee != vActuelle){
+        localStorage.setItem("v", vActuelle)
+        if(vStockee)
+            alert(`Le Testeur d'horaires a été mis à jour.\n${vStockee} → ${vActuelle}`)
+    }
 
     // Fonctions de modification du localStorage
     window.getFavoris = ()=>JSON.parse(localStorage.getItem("favoris") || "[]")
