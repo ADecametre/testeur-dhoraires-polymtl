@@ -72,7 +72,20 @@ function creerInterfaceTesteur(active = null){
             ${active ? '<a onclick="location.reload()" style="background-color:#00f3">Rafraîchir</a>' : ""}
             <a href="${urlHelp}" target="_blank">?</a>
         </div>
-        ${disabled ? "" : '<table id="tests" style="width:max-content"><thead><th style="width:max(10dvw,100px)"></th></thead><tbody /></table>'}
+        ${disabled ? "" : `
+            <style>
+                #tests ul,li{margin-block:0.4em}
+                #tests li:not(:last-child){zoom:90%;line-height:1.2em}
+                #tests:not([data-log="on"]) li:not(:last-child){display:none}
+            </style>
+            <div>
+                <label style="position:sticky;top:50px;background-color:white;padding:0.5em">
+                    <input type="checkbox" onclick='document.getElementById("tests").dataset.log = this.checked ? "on" : "off"' />
+                    Afficher tous les messages
+                </label>
+                <table id="tests" style="width:max-content"><thead><th style="width:max(10dvw,100px)"></th></thead><tbody /></table>
+            </div>
+        `}
         <hr />`)
         if(!disabled) document.querySelector(".container").style = "min-width: min(768px,95dvw)"
 }
@@ -422,19 +435,20 @@ async function testeur(){
     const windowAlert = alert
     var error // Variable qui stocke les messages pour les cours non disponibles
     var affichageTest // Variable qui stocke l'élément HTML où insérer les messages
-    window.alert = message => {
-        if (motsClesNonDisponible.some(s=>message.includes(s))) error = message
+    logMessages = message => {
         const couleur = 'color:'+error ? "red" : "gray";
         const taille = message.startsWith("»") ? ";font-size:0.7em;margin:0;color:darkturquoise;font-weight:bold" : "";
         console.log("%c"+message, couleur+taille)
-        affichageTest?.querySelector("ul").insertAdjacentHTML("beforeend", `<li style="${couleur}${taille}">${message}</li>`)
+        affichageTest?.querySelector("ul").insertAdjacentHTML("beforeend",
+            `<li style="${couleur}${taille}">${message.replaceAll("\n","<br/>")}</li>`
+        )
+    }
+    window.alert = message => {
+        if (motsClesNonDisponible.some(s=>message.includes(s))) error = message
+        logMessages(message)
     }
     const windowConfirm = confirm
-    window.confirm = message => {
-        const couleur = 'color:'+error?"red":"gray";
-        console.log("%c"+message, couleur)
-        affichageTest?.querySelector("ul").insertAdjacentHTML("beforeend", `<li style="${couleur}">${message}</li>`)
-    }
+    window.confirm = message => logMessages(message)
     function resetWindowPopups(){
         window.alert = windowAlert
         window.confirm = windowConfirm
@@ -497,7 +511,7 @@ async function testeur(){
         console.log("%cDisponible"+(isHoraireDifferent ? "" : " (horaire actuel)"), 'color:green')
         // const affichageTest = document.querySelector("#test-"+(n_horaire+1))
         affichageTest.querySelector("ul").insertAdjacentHTML("beforeend", `<li style="color:green">Disponible${isHoraireDifferent ? "" : " (horaire actuel)"}</li>`)
-        affichageTest.style = "position:sticky;top:54px;background-color:#dfd;box-shadow:#dfd 0 0 10px 5px;font-weight:bold"
+        affichageTest.style = "position:sticky;top:80px;background-color:#dfd;box-shadow:#dfd 0 0 10px 5px;font-weight:bold"
 
         await wait(100)
         window.opener?.postMessage(horaires_str.split("*")[n_horaire], urlAEP.origin)
