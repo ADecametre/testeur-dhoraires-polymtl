@@ -355,10 +355,13 @@ function gestionnaireDeFavoris(){
     }
     window.exportFavoris = ()=>{
         const a = document.createElement('a');
-        a.href = 'data:attachment/html,' + encodeURI(
-            '<style>body{display:flex;flex-wrap:wrap;justify-content:center;}</style>'
+        a.href = 'data:attachment/html,' + encodeURIComponent(
+            '<style>'
+                +'body{display:flex;flex-wrap:wrap;justify-content:center;counter-reset:horaire}'
+                +'body>div::before{counter-increment:horaire;content:"Horaire #"counter(horaire);font-size:small;font-weight:bold;}'
+            +'</style>'
             +'<link rel="stylesheet" href="https://beta.horaires.aep.polymtl.ca/pkg/aep-schedule-website.css">'
-            +window.getFavoris().map((favori,i)=>`<div style="padding:2em">${favori}</div>`).join("<hr />")
+            +window.getFavoris().map(favori=>`<div style="padding:2em">${favori}</div>`).join("<hr />")
         );
         a.target = '_blank';
         a.download = 'horaires-favoris.html';
