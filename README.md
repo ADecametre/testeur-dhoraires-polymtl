@@ -6,6 +6,8 @@ Cela évite de devenir fou en rentrant manuellement des numéros de groupe, en a
 
 [![Installer](https://img.shields.io/badge/Installer-darkgreen?style=for-the-badge&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAA7xJREFUeF7tm02oVVUUx3//tAJFaCBFHzpInBUIQlObWqhgEIi8TIgGQZSQRvDIfBY98WOQoBANUokKAoNQHEiTEIdBg6AIBMH3SCWtBomiy7Ng33jvdva+59xz3n33dveGxxuc/bHWb6+z13/vfa4Y86Ix958MIEfAmBNYlFfAzB4C9gMTxf8lwOfApKQ7g56PxQIwDbzb5exhSe+MC4ArwBNdzl6T9Oi4ALAyRyUNPCIHPqA7bmYZQI6AEgL5FchrQF4EB74oD3zAnAVyGsw6IAuhrASzFM57gbwZypuhvBn6L4G8Gxz23aCZ+d5hF/AG4Ce7XwD7JN2qc5bXlg4ws4cLZb03nC4/AJwE3q9zulxrM2Rmfmp7sMvZH4Atkm5UhdAGADN7BDgNPN817keSJqvaUhfAr8Wsry3p/Gdgo6TLVQZuCsDMngLOAs+WjDcj6ckqdnidugB+A9ZEOvej7hck/dRr8CYAzOyZ4PyqyDizkrqP3KMm1QXg79sHCQf/BLZK+j4FoV8AZrYB+Bbw8I8VX5NSNs5rVxeAX2N9BryaMOC2P5f0ZaxOPwDM7OWwyPnCFyt+xfaapLu9orDzvBYAbxQygUeC/0V9BKZiM1EXgJm9BRwp+vSVPlY+Ad6WVCqzY41qA+h0ZGY7i+utT4GlCaOOBqPuza1TFUBF2D7bb0o6XnXW59brG0CIhk3AV8CyxOCeqrZL+mcOvJ6boXCD7CG9LdG3648JSd/047y3aQQgQHgO+A5IXWxeBDZLuh7aJAGEHO+LnS96sfJH6PNCv863AiA49DRwLqIROvb9qxVSr4CZeQo7U6z26xKOXQq645cmzrcGIEB4LBi+PmHUrGuFQjn+GKnTyfGrE324znC94bqjcWn8CnQtbsuBr4EXE5b9DayIPL/ZI8efB16S9Fdjz0MHrQIIkeBa4RjweltGhn58o+M5vtXPaFoHECB4v1P+3U9LED4Mu7xaOb7K2AsCoDNwRa2QsrNRjl90ACEaqmiFMlsb5/ihABAgVNEKc+1tJccPDYAAoYpW8Kqt5fihAlBRK7Sa44cOQIAQ0wqt5/ihBBAgPAjsBl4JRp4ADrWd44cWQBXDBlVnQXXAoJxoMk4G0ITe/6FtaQR0fc//+Ig7ejX1e4QYgLLv+UecA6W/R4gBKPuef9QBlP4eIQbg9x5nfKMIo/TKLAbgALBnFL1M2Dwt6b3u5zEArtQ+LjYmO4CVIw5iprjPPBUOVPzWal7JOmDEZ7ex+TkCGiMc8Q7GPgLuA2E6cVARaA3kAAAAAElFTkSuQmCC&link=https://www.tampermonkey.net/script_installation.php#url=https://github.com/ADecametre/testeur-dhoraires-polymtl/raw/refs/heads/main/script.user.js)](https://www.tampermonkey.net/script_installation.php#url=https://github.com/ADecametre/testeur-dhoraires-polymtl/raw/refs/heads/main/script.user.js)
 <br>
+<sup>Vous devez avoir l'extension [Tampermonkey](https://www.tampermonkey.net/#download).</sup>
+<br>
 <sup><sup>[Cliquez ici si le bouton ne fonctionne pas](https://github.com/ADecametre/testeur-dhoraires-polymtl/raw/refs/heads/main/script.user.js)</sup></sup>
 
 | Avant | Après |
@@ -18,18 +20,20 @@ Cela évite de devenir fou en rentrant manuellement des numéros de groupe, en a
 
 [![Tutoriel YouTube](https://img.youtube.com/vi/FrNNbJoBN2k/0.jpg)](https://youtu.be/FrNNbJoBN2k)
 
-### Après avoir reçu son horaire
+### Après avoir reçu votre premier horaire
 
 1. Rendez-vous sur [le générateur d'horaires de l'AEP](https://beta.horaires.aep.polymtl.ca/).
 2. Rentrez les cours que vous souhaitez suivre*.
 3. Modifiez les paramètres (*Horaire personnel*, *Finir plus tôt*, etc.).
 4. Cliquez sur `Générer les horaires`.
 5. Sous les horaires qui vous intéressent, cliquez sur `Ajouter aux favoris`.
-6. Cliquez sur `Afficher les favoris` et classez votre liste d'horaires en ordre de préférence.
-
-La liste restera stockée sur votre navigateur. Vous pouvez `Exporter` votre liste de favoris pour vous assurer de ne pas la perdre.
+6. Cliquez sur `Afficher les favoris` et classez votre liste d'horaires par ordre de préférence.
 
 <sup>* Pour voir tous les groupes possibles, mettez tous les groupes en vert. Pour voir seulement les groupes présentement disponibles, mettez en vert vos groupes actuels et ne touchez pas aux autres groupes.</sup>
+
+Votre liste restera stockée sur votre navigateur après avoir fermé la page.
+
+Vous pouvez aussi `Exporter` votre liste d'horaires pour vous assurer de ne pas la perdre. Cela créera un fichier qui peut s'ouvrir sur n'importe quel appareil ou qui peut s'`Importer` sur un appareil où le Testeur est installé.
 
 ### Pendant la période de modification d'horaire
 
@@ -39,7 +43,7 @@ La liste restera stockée sur votre navigateur. Vous pouvez `Exporter` votre lis
 
 Le Testeur essaiera un par un les horaires fournis jusqu'à ce qu'il trouve un horaire disponible. Il remplit alors automatiquement tous les champs du formulaire (sans cliquer sur le bouton `Enregistrer`).
 
-<sup>Vous pouvez voir toutes les opérations effectuées par le Testeur et les messages renvoyés par le dossier étudiant en cliquant sur `Afficher tous les messages`.</sup>
+<sup>Vous pouvez voir toutes les opérations effectuées par le Testeur et les messages retournés par la page en cliquant sur `Afficher tous les messages`.</sup>
 
 Vous pouvez `Rafraîchir` la page ou `Modifier votre liste d'horaires`, puis, lorsque vous êtes satisfait, `Enregistrer` votre choix de cours.
 
