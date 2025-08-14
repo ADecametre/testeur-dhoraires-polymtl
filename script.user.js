@@ -320,7 +320,8 @@ function gestionnaireDeFavoris(){
         elements.forEach((e, j)=>{e.innerText = new_elements_text[j]})
         
         const favoris = window.getFavoris()
-        favoris[i] = favori.innerHTML
+        favoris[i] = favori.innerHTML.replace(/<\/?tbody>/g,"")
+        console.log(favori.innerHTML.replace(/<\/?tbody>/g,""), favoris[i])
         window.setFavoris(favoris)
     }
 
