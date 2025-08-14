@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0.0
+// @version      2.0.1
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -96,9 +96,10 @@ function creerInterfaceTesteur(active = null){
             Cliquez pour remettre votre horaire actuel.
         </small>
         <br/>
+        ${disabled ? "" : `
         <input type="reset" value="Réinitialiser"
             onclick='setTimeout(()=>initialiser(),250);document.getElementById("erreur-autocomplete").style.display="none"'>
-        `)
+        `}`)
         if(!disabled) document.querySelector(".container").style = "min-width: min(768px,95dvw)"
 }
 
