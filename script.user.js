@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Testeur d'horaires
-// @version      2.0.1
+// @version      2.0.2
 // @description  https://github.com/ADecametre/testeur-dhoraires-polymtl
 // @author       ADécamètre
 // @match        https://dossieretudiant.polymtl.ca/WebEtudiant7/PresentationHorairePersServlet
@@ -305,6 +305,24 @@ function gestionnaireDeFavoris(){
         favoris.splice(new_i, 0, ...favoris.splice(i, 1))
         window.setFavoris(favoris)
     }
+    window.editFavori = i=>{
+        const favori = document.querySelectorAll(".horaire")[i]
+        const elements = [...favori.querySelectorAll(".cours span, .cours td:nth-child(3), .cours td:nth-child(4)")]
+        let text = elements.map(e=>e.innerText).join("|")
+        new_text = prompt("test", text)
+        if (!text || new_text == text) return
+
+        const new_elements_text = new_text.split("|")
+        if (elements.length != new_elements_text.length){
+            alert("Erreur")
+            return
+        }
+        elements.forEach((e, j)=>{e.innerText = new_elements_text[j]})
+        
+        const favoris = window.getFavoris()
+        favoris[i] = favori.innerHTML
+        window.setFavoris(favoris)
+    }
 
     window.testerFavoris = async ()=>{
         const horaires = [...document.getElementById("favoris-liste").querySelectorAll(".horaire")]
@@ -376,6 +394,7 @@ function gestionnaireDeFavoris(){
         document.getElementById("favoris-liste").innerHTML = favoris.map((e,i)=>
             `${i==0 ? "" : "<hr />"}
             <b>Horaire #${i+1}</b>
+            <small><small><button onclick="editFavori(${i})">✏️</button></small></small>
             <div>
                 <div class="horaire">${e}</div>
                 <button class="up" onclick="moveFavori(${i}, ${i-1})" ${i==0 ? "disabled" : ""}>
